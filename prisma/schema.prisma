@@ -1,0 +1,376 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ====== 枚举 ======
+
+enum UserRole {
+  ADMIN
+  QC_SUPERVISOR
+  LEVEL1_APPROVER
+  LEVEL2_APPROVER
+  OPERATOR
+}
+
+enum TicketStatus {
+  PENDING_APPROVAL
+  LEVEL1_APPROVING
+  LEVEL2_APPROVING
+  EXECUTING
+  COMPLETED
+  CLOSED
+}
+
+enum ExceptionType {
+  // 物流类异常（手工上报）
+  LOST
+  DAMAGED
+  REJECTED_BY_CUSTOMER
+  TIMEOUT_DELIVERY
+  WRONG_ADDRESS
+  // 品控类异常（扫描自动触发）
+  QC_QUANTITY_MISMATCH
+  QC_APPEARANCE_DAMAGE
+  QC_SPEC_MISMATCH
+  QC_LABEL_ERROR
+  QC_BATCH_ABNORMAL
+}
+
+enum ExceptionSource {
+  MANUAL_REPORT
+  SCAN_TRIGGERED
+}
+
+enum ApprovalResult {
+  APPROVED
+  REJECTED
+}
+
+enum ApprovalLevel {
+  LEVEL1
+  LEVEL2
+}
+
+enum CompensationDirection {
+  TO_CUSTOMER
+  FROM_SUPPLIER
+}
+
+enum CompensationStatus {
+  PENDING
+  EXECUTED
+  CANCELLED
+}
+
+enum ScanResult {
+  PASSED
+  QC_HOLD
+}
+
+enum BatchStatus {
+  AVAILABLE
+  LOCKED
+  RELEASED
+  VOIDED
+}
+
+enum QCSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ====== 用户与角色 ======
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String
+  role      UserRole @default(OPERATOR)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reportedTickets  ExceptionTicket[] @relation("ReportedBy")
+  approvedRecords  ApprovalRecord[]
+  scanRecords      ScanRecord[]
+  assignedTickets  ExceptionTicket[] @relation("AssignedApprover")
+
+  @@index([role])
+  @@index([isActive])
+}
+
+// ====== 运单本地快照 ======
+
+model WaybillSnapshot {
+  id               String   @id @default(cuid())
+  v2OrderId        String   @unique
+  externalCode     String?
+  storeName        String?
+  recipientName    String?
+  recipientPhone   String?
+  recipientAddress String?
+  totalAmount      Float    @default(0)
+  skuSummary       Json?
+  lastSyncedAt     DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tickets    ExceptionTicket[]
+  scanRecords ScanRecord[]
+  inventory  Inventory[]
+
+  @@index([externalCode])
+  @@index([lastSyncedAt])
+}
+
+// ====== 接口同步日志 ======
+
+model SyncLog {
+  id             String   @id @default(cuid())
+  requestId      String   @unique
+  endpoint       String
+  method         String   @default("GET")
+  requestSummary String?  @db.Text
+  responseStatus Int?
+  success        Boolean  @default(false)
+  errorMessage   String?  @db.Text
+  durationMs     Int?
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([success])
+  @@index([requestId])
+}
+
+// ====== 异常工单 ======
+
+model ExceptionTicket {
+  id                String          @id @default(cuid())
+  waybillSnapshotId String
+  waybillSnapshot   WaybillSnapshot @relation(fields: [waybillSnapshotId], references: [id])
+  exceptionType     ExceptionType
+  source            ExceptionSource
+  description       String?         @db.Text
+  severity          QCSeverity      @default(MEDIUM)
+  reportedById      String
+  reportedBy        User            @relation("ReportedBy", fields: [reportedById], references: [id])
+  currentStatus     TicketStatus    @default(PENDING_APPROVAL)
+  currentApproverId String?
+  currentApprover   User?           @relation("AssignedApprover", fields: [currentApproverId], references: [id])
+  resubmitCount     Int             @default(0)
+  maxResubmit       Int             @default(3)
+  amount            Float           @default(0)
+  version           Int             @default(0)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  approvalRecords     ApprovalRecord[]
+  compensationRecords CompensationRecord[]
+  scanRecords         ScanRecord[]
+  inventory           Inventory[]
+
+  @@index([waybillSnapshotId])
+  @@index([currentStatus])
+  @@index([currentApproverId])
+  @@index([reportedById])
+  @@index([source])
+  @@index([exceptionType])
+  @@index([createdAt])
+}
+
+// ====== 审批记录 ======
+
+model ApprovalRecord {
+  id         String         @id @default(cuid())
+  ticketId   String
+  ticket     ExceptionTicket @relation(fields: [ticketId], references: [id])
+  approverId String
+  approver   User           @relation(fields: [approverId], references: [id])
+  level      ApprovalLevel
+  result     ApprovalResult
+  comment    String?        @db.Text
+  createdAt  DateTime       @default(now())
+
+  compensationRecords CompensationRecord[]
+
+  @@index([ticketId])
+  @@index([approverId])
+  @@index([createdAt])
+}
+
+// ====== 赔付记录 ======
+
+model CompensationRecord {
+  id               String               @id @default(cuid())
+  ticketId         String
+  ticket           ExceptionTicket      @relation(fields: [ticketId], references: [id])
+  approvalRecordId String
+  approvalRecord   ApprovalRecord       @relation(fields: [approvalRecordId], references: [id])
+  direction        CompensationDirection
+  amount           Float
+  status           CompensationStatus   @default(PENDING)
+  remark           String?              @db.Text
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([ticketId])
+  @@index([approvalRecordId])
+  @@index([direction])
+}
+
+// ====== 库存 ======
+
+model Inventory {
+  id                String       @id @default(cuid())
+  skuCode           String
+  skuName           String
+  quantity          Float        @default(0)
+  batchStatus       BatchStatus  @default(AVAILABLE)
+  waybillSnapshotId String
+  waybillSnapshot   WaybillSnapshot @relation(fields: [waybillSnapshotId], references: [id])
+  ticketId          String?
+  ticket            ExceptionTicket? @relation(fields: [ticketId], references: [id])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@unique([waybillSnapshotId, skuCode])
+  @@index([skuCode])
+  @@index([batchStatus])
+}
+
+// ====== 扫描记录 ======
+
+model ScanRecord {
+  id                String          @id @default(cuid())
+  waybillSnapshotId String
+  waybillSnapshot   WaybillSnapshot @relation(fields: [waybillSnapshotId], references: [id])
+  skuCode           String
+  skuName           String
+  ticketId          String?
+  ticket            ExceptionTicket? @relation(fields: [ticketId], references: [id])
+  operatorId        String
+  operator          User            @relation(fields: [operatorId], references: [id])
+  qcRuleId          String?
+  qcRule            QCRule?         @relation(fields: [qcRuleId], references: [id])
+  scanResult        ScanResult
+  resultDetail      String?         @db.Text
+  batchStatus       BatchStatus     @default(AVAILABLE)
+  createdAt         DateTime        @default(now())
+
+  @@index([waybillSnapshotId, skuCode])
+  @@index([ticketId])
+  @@index([scanResult])
+  @@index([createdAt])
+}
+
+// ====== 品控规则 ======
+
+model QCRule {
+  id                  String        @id @default(cuid())
+  name                String
+  exceptionSubType    ExceptionType
+  triggerCondition    Json
+  severity            QCSeverity    @default(MEDIUM)
+  autoCreateTicket    Boolean       @default(true)
+  defaultApprovalLevel ApprovalLevel @default(LEVEL1)
+  isActive            Boolean       @default(true)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  scanRecords ScanRecord[]
+
+  @@index([isActive])
+  @@index([exceptionSubType])
+}
+
+// ====== 审批阈值配置 ======
+
+model ApprovalThresholdConfig {
+  id             String   @id @default(cuid())
+  name           String
+  minAmount      Float    @default(0)
+  maxAmount      Float?
+  requiredLevels Json
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+// ====== 超时配置 ======
+
+model TimeoutConfig {
+  id             String   @id @default(cuid())
+  configKey      String   @unique
+  timeoutMinutes Int
+  action         Json
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ====== V2 原有表（与 V2 共用数据库，不可删除） ======
+
+model ParseRule {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  ruleConfig  String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
+}
+
+model Order {
+  id               String    @id @default(cuid())
+  externalCode     String?
+  storeName        String?
+  recipientName    String?
+  recipientPhone   String?
+  recipientAddress String?
+  remark           String?   @db.Text
+  createdAt        DateTime  @default(now())
+  submissionId     String?
+  submission       Submission? @relation(fields: [submissionId], references: [id])
+  items            OrderItem[]
+
+  @@index([externalCode])
+  @@index([submissionId])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id       String  @id @default(cuid())
+  orderId  String
+  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  skuCode  String
+  skuName  String
+  quantity Float
+  skuSpec  String?
+  remark   String? @db.Text
+
+  @@index([orderId])
+}
+
+model Submission {
+  id           String   @id @default(cuid())
+  ruleId       String?
+  fileName     String
+  totalOrders  Int      @default(0)
+  successCount Int      @default(0)
+  failCount    Int      @default(0)
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  orders       Order[]
+
+  @@index([createdAt])
+}

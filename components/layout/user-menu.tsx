@@ -1,0 +1,71 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+interface UserInfo {
+  id: string
+  name: string
+  role: string
+}
+
+const roleLabels: Record<string, string> = {
+  ADMIN: '管理员',
+  QC_SUPERVISOR: '品控主管',
+  LEVEL1_APPROVER: '一级审批人',
+  LEVEL2_APPROVER: '二级审批人',
+  OPERATOR: '操作员',
+}
+
+export default function UserMenu() {
+  const router = useRouter()
+  const [user, setUser] = useState<UserInfo | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) setUser(data.user)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    setUser(null)
+    router.push('/login')
+    router.refresh()
+  }
+
+  if (loading) {
+    return <div className="px-3 py-2 text-xs text-sidebar-foreground/40">加载中...</div>
+  }
+
+  if (!user) {
+    return (
+      <button
+        onClick={() => router.push('/login')}
+        className="w-full px-3 py-2 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-all text-left"
+      >
+        登录
+      </button>
+    )
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="px-3 py-1.5">
+        <p className="text-sm font-medium text-sidebar-foreground">{user.name}</p>
+        <p className="text-xs text-sidebar-foreground/50">{roleLabels[user.role] || user.role}</p>
+      </div>
+      <button
+        onClick={handleLogout}
+        className="w-full px-3 py-1.5 text-xs text-sidebar-foreground/40 hover:text-sidebar-foreground/70 rounded-lg transition-all text-left"
+      >
+        退出登录
+      </button>
+    </div>
+  )
+}

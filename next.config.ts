@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ['bcryptjs', 'uuid'],
 };
 
 export default nextConfig;

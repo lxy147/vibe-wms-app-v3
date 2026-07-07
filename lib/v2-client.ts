@@ -210,9 +210,13 @@ export interface V2PaginatedResponse<T> {
 
 // 校验运单是否存在
 export async function validateWaybill(externalCode: string): Promise<V2Response<V2WaybillBasic>> {
-  return callV2<V2WaybillBasic>('/api/external/waybills/validate', {
+  const result = await callV2<{ exists: boolean; order: V2WaybillBasic }>('/api/external/waybills/validate', {
     params: { code: externalCode },
   })
+  if (result.success && result.data) {
+    return { success: true, data: result.data.order }
+  }
+  return { success: result.success, error: result.error }
 }
 
 // 获取运单详情（含 SKU 列表）

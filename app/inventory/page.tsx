@@ -9,7 +9,7 @@ export default async function InventoryPage({
 }) {
   const params = await searchParams
   const page = Math.max(1, parseInt(params.page || '1'))
-  const pageSize = 20
+  const pageSize = 10
   const batchStatus = params.batchStatus
 
   const where: Record<string, unknown> = {}

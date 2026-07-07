@@ -3,13 +3,26 @@ import { db } from '@/lib/db'
 import { getCircuitBreakerStatus } from '@/lib/v2-client'
 import { formatDateTime } from '@/lib/utils'
 
-export default async function SyncPage() {
+export default async function SyncPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>
+}) {
+  const params = await searchParams
+  const page = Math.max(1, parseInt(params.page || '1'))
+  const pageSize = 10
+
+  const where: Record<string, unknown> = {}
+  if (params.success) where.success = params.success === 'true'
+
   const [logs, total, lastSuccess, successRate, circuitBreaker] = await Promise.all([
     db.syncLog.findMany({
-      take: 50,
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
       orderBy: { createdAt: 'desc' },
     }),
-    db.syncLog.count(),
+    db.syncLog.count({ where }),
     db.syncLog.findFirst({
       where: { success: true },
       orderBy: { createdAt: 'desc' },
@@ -29,6 +42,8 @@ export default async function SyncPage() {
     })(),
     getCircuitBreakerStatus(),
   ])
+
+  const totalPages = Math.ceil(total / pageSize)
 
   return (
     <div className="p-6 space-y-6">
@@ -60,8 +75,16 @@ export default async function SyncPage() {
 
       {/* 同步日志 */}
       <div className="bg-card border border-border rounded-xl">
-        <div className="px-5 py-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">调用日志（最近 50 条）</h3>
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <h3 className="font-semibold text-foreground">调用日志（共 {total} 条）</h3>
+          <form className="flex gap-2">
+            <select name="success" defaultValue={params.success || ''} className="px-3 py-1.5 border border-border rounded-lg bg-background text-sm">
+              <option value="">全部</option>
+              <option value="true">成功</option>
+              <option value="false">失败</option>
+            </select>
+            <button type="submit" className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm">筛选</button>
+          </form>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -93,6 +116,19 @@ export default async function SyncPage() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="px-5 py-3 border-t border-border flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">第 {page} / {totalPages} 页</span>
+            <div className="flex gap-2">
+              {page > 1 && (
+                <a href={`/sync?page=${page - 1}${params.success ? `&success=${params.success}` : ''}`} className="px-3 py-1 border border-border rounded text-sm hover:bg-muted">上一页</a>
+              )}
+              {page < totalPages && (
+                <a href={`/sync?page=${page + 1}${params.success ? `&success=${params.success}` : ''}`} className="px-3 py-1 border border-border rounded text-sm hover:bg-muted">下一页</a>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

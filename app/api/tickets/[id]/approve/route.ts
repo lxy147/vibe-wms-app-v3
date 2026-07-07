@@ -38,12 +38,7 @@ export async function POST(
       return NextResponse.json({ error: '不能审批自己提交的工单' }, { status: 403 })
     }
 
-    // 3. 权限校验：必须是当前指派的审批人
-    if (ticket.currentApproverId !== user.id) {
-      return NextResponse.json({ error: '您不是该工单的当前审批人' }, { status: 403 })
-    }
-
-    // 4. 权限校验：角色必须匹配当前审批层级
+    // 3. 权限校验：角色必须匹配当前审批层级
     const currentLevel = ticket.currentStatus === 'LEVEL1_APPROVING' ? 'LEVEL1' : 'LEVEL2'
     const requiredRole = currentLevel === 'LEVEL1' ? 'LEVEL1_APPROVER' : 'LEVEL2_APPROVER'
     if (user.role !== requiredRole && user.role !== 'ADMIN') {

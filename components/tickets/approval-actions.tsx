@@ -38,7 +38,9 @@ export default function ApprovalActions({
 
   const canApprove = currentStatus === 'LEVEL1_APPROVING' || currentStatus === 'LEVEL2_APPROVING'
   const canExecute = currentStatus === 'EXECUTING'
-  const isApprover = currentUser?.id === approverId
+
+  const requiredRole = currentStatus === 'LEVEL1_APPROVING' ? 'LEVEL1_APPROVER' : 'LEVEL2_APPROVER'
+  const hasRole = currentUser && (currentUser.role === requiredRole || currentUser.role === 'ADMIN')
 
   if (!canApprove && !canExecute) return null
 
@@ -52,15 +54,15 @@ export default function ApprovalActions({
     )
   }
 
-  if (canApprove && !isApprover) {
+  if (canApprove && !hasRole) {
     return (
       <div className="bg-card border border-warning/30 rounded-xl p-6">
         <div className="flex items-center gap-3">
           <span className="text-warning text-lg font-bold">!</span>
           <div>
-            <p className="text-sm font-medium text-foreground">非当前指派的审批人</p>
+            <p className="text-sm font-medium text-foreground">无审批权限</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              当前账号 <span className="text-foreground">{currentUser.name}</span>，该工单指派给了其他审批人
+              当前账号 {currentUser.name}（{currentUser.role}），需要 {requiredRole} 角色
             </p>
           </div>
         </div>
@@ -129,7 +131,7 @@ export default function ApprovalActions({
               {currentStatus === 'LEVEL1_APPROVING' ? '一级审批' : '二级审批'}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              当前审批人：{currentUser.name}
+              当前账号：{currentUser.name}（{currentUser.role === 'LEVEL1_APPROVER' ? '一级审批人' : currentUser.role === 'LEVEL2_APPROVER' ? '二级审批人' : currentUser.role}）
             </p>
           </div>
 

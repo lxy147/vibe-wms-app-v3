@@ -226,9 +226,13 @@ export async function getWaybillDetail(id: string): Promise<V2Response<V2Waybill
 
 // 校验 SKU 是否归属运单
 export async function validateSku(waybillId: string, skuCode: string): Promise<V2Response<V2WaybillItem>> {
-  return callV2<V2WaybillItem>(`/api/external/waybills/${waybillId}/sku-validate`, {
+  const result = await callV2<{ valid: boolean; item: V2WaybillItem }>(`/api/external/waybills/${waybillId}/sku-validate`, {
     params: { skuCode },
   })
+  if (result.success && result.data) {
+    return { success: true, data: result.data.item }
+  }
+  return { success: result.success, error: result.error }
 }
 
 // 分页获取运单列表

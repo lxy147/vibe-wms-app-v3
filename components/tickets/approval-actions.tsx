@@ -127,12 +127,9 @@ export default function ApprovalActions({
       {canApprove && (
         <div className="space-y-4">
           <div>
-            <h3 className="font-semibold text-foreground">
+            <h3 className="font-semibold text-foreground text-lg">
               {currentStatus === 'LEVEL1_APPROVING' ? '一级审批' : '二级审批'}
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              当前账号：{currentUser.name}（{currentUser.role === 'LEVEL1_APPROVER' ? '一级审批人' : currentUser.role === 'LEVEL2_APPROVER' ? '二级审批人' : currentUser.role}）
-            </p>
           </div>
 
           <textarea

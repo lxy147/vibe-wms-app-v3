@@ -79,18 +79,14 @@ export default async function TicketDetailPage({
       {/* 审批操作 */}
       {(ticket.currentStatus === 'LEVEL1_APPROVING' || ticket.currentStatus === 'LEVEL2_APPROVING') && (
         <div className="bg-card border border-primary/20 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-foreground">审批信息</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                当前审批人：<span className="text-foreground font-medium">{ticket.currentApprover?.name || '未分配'}</span>
-                &nbsp;·&nbsp;
-                {ticket.currentStatus === 'LEVEL1_APPROVING' ? '一级审批中' : '二级审批中'}
-              </p>
-            </div>
-            <ApprovalActions
-              ticketId={ticket.id}
-              currentStatus={ticket.currentStatus}
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-foreground">
+              {ticket.currentStatus === 'LEVEL1_APPROVING' ? '一级审批中' : '二级审批中'}
+            </h3>
+          </div>
+          <ApprovalActions
+            ticketId={ticket.id}
+            currentStatus={ticket.currentStatus}
               version={ticket.version}
               reportedById={ticket.reportedById}
               exceptionType={ticket.exceptionType}

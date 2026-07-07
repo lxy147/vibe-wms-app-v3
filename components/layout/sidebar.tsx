@@ -64,8 +64,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border space-y-3">
-        <UserMenu />
+      <div className="p-4 border-t border-sidebar-border">
         <p className="text-xs text-sidebar-foreground/40 text-center">v3.0 - 运单全流程管理</p>
       </div>
     </aside>

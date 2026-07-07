@@ -2,7 +2,6 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import UserMenu from './user-menu'
 
 const navItems = [
   { href: '/', label: '工作台', icon: 'LayoutDashboard' },
@@ -22,24 +21,6 @@ export default function Sidebar() {
 
   return (
     <aside className="w-60 border-r border-sidebar-border bg-sidebar flex flex-col shrink-0">
-      {/* Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-            <span className="text-primary-foreground font-bold text-sm">W3</span>
-          </div>
-          <div>
-            <h1 className="text-sm font-semibold text-sidebar-foreground leading-tight">运单管理</h1>
-            <p className="text-xs text-sidebar-foreground/50">全流程追踪系统</p>
-          </div>
-        </div>
-      </div>
-
-      {/* User */}
-      <div className="px-3 py-3 border-b border-sidebar-border">
-        <UserMenu />
-      </div>
-
       {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
@@ -62,12 +43,6 @@ export default function Sidebar() {
           )
         })}
       </nav>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border space-y-3">
-        <UserMenu />
-        <p className="text-xs text-sidebar-foreground/40 text-center">v3.0 - 运单全流程管理</p>
-      </div>
     </aside>
   )
 }

@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
       matchedRules: qcResult.matchedRules,
     }, { status: 201 })
   } catch (error) {
-    return NextResponse.json({ error: '扫描操作失败' }, { status: 500 })
+    return NextResponse.json({ error: '扫描操作失败', detail: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
 

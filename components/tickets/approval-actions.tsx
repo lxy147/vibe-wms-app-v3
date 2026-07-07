@@ -125,13 +125,7 @@ export default function ApprovalActions({
   return (
     <div className="bg-card border border-primary/20 rounded-xl p-6">
       {canApprove && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-semibold text-foreground text-lg">
-              {currentStatus === 'LEVEL1_APPROVING' ? '一级审批' : '二级审批'}
-            </h3>
-          </div>
-
+        <div className="space-y-3">
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}

@@ -27,7 +27,6 @@ export default function ApprovalActions({
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [comment, setComment] = useState('')
-  const [showApprove, setShowApprove] = useState(false)
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null)
 
   useEffect(() => {
@@ -43,28 +42,28 @@ export default function ApprovalActions({
 
   if (!canApprove && !canExecute) return null
 
-  if (canApprove && !isApprover) {
+  if (!currentUser) {
     return (
-      <div className="bg-card border border-warning/30 rounded-xl p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center text-warning text-sm font-bold">!</div>
-          <div>
-            <p className="text-sm font-medium text-foreground">非当前指派的审批人</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              当前登录账号：{currentUser?.name || '未登录'}。该工单指派给了其他审批人，请使用对应账号登录后审批
-            </p>
-          </div>
-        </div>
+      <div className="bg-card border border-border rounded-xl p-6">
+        <p className="text-sm text-muted-foreground text-center">
+          请先<a href="/login" className="text-primary hover:underline">登录</a>后再进行审批
+        </p>
       </div>
     )
   }
 
-  if (canApprove && !currentUser) {
+  if (canApprove && !isApprover) {
     return (
       <div className="bg-card border border-warning/30 rounded-xl p-6">
-        <p className="text-sm text-muted-foreground">
-          请先<a href="/login" className="text-primary hover:underline">登录</a>后再进行审批操作
-        </p>
+        <div className="flex items-center gap-3">
+          <span className="text-warning text-lg font-bold">!</span>
+          <div>
+            <p className="text-sm font-medium text-foreground">非当前指派的审批人</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              当前账号 <span className="text-foreground">{currentUser.name}</span>，该工单指派给了其他审批人
+            </p>
+          </div>
+        </div>
       </div>
     )
   }
@@ -81,11 +80,7 @@ export default function ApprovalActions({
       if (res.ok) {
         toast.success(result === 'APPROVED' ? '审批通过' : '已拒绝')
         router.refresh()
-        setShowApprove(false)
         setComment('')
-      } else if (res.status === 401) {
-        toast.error('请先登录')
-        router.push('/login')
       } else if (res.status === 409) {
         toast.error('该工单已被他人处理，请刷新页面')
       } else {
@@ -99,10 +94,6 @@ export default function ApprovalActions({
   }
 
   const handleExecute = async () => {
-    if (!comment.trim()) {
-      toast.error('请填写执行备注')
-      return
-    }
     setLoading(true)
     try {
       const isQC = source === 'SCAN_TRIGGERED' || exceptionType.startsWith('QC_')
@@ -132,91 +123,70 @@ export default function ApprovalActions({
   return (
     <div className="bg-card border border-primary/20 rounded-xl p-6">
       {canApprove && (
-        <>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-foreground">审批操作</h3>
-            {!showApprove && (
-              <button
-                onClick={() => setShowApprove(true)}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
-              >
-                开始审批
-              </button>
-            )}
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-foreground">
+              {currentStatus === 'LEVEL1_APPROVING' ? '一级审批' : '二级审批'}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              当前审批人：{currentUser.name}
+            </p>
           </div>
 
-          {showApprove && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">审批意见</label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="请填写审批意见..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleApprove('APPROVED')}
-                  disabled={loading}
-                  className="flex-1 py-2.5 bg-success text-success-foreground rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50"
-                >
-                  {loading ? '处理中...' : '✓ 审批通过'}
-                </button>
-                <button
-                  onClick={() => handleApprove('REJECTED')}
-                  disabled={loading}
-                  className="flex-1 py-2.5 bg-destructive text-destructive-foreground rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50"
-                >
-                  {loading ? '处理中...' : '✗ 拒绝'}
-                </button>
-                <button
-                  onClick={() => setShowApprove(false)}
-                  disabled={loading}
-                  className="px-4 py-2.5 border border-border rounded-lg text-sm text-muted-foreground hover:bg-muted"
-                >
-                  取消
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="审批意见（选填）"
+            rows={2}
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+          />
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleApprove('APPROVED')}
+              disabled={loading}
+              className="flex-1 py-2.5 bg-success text-white rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              {loading ? '...' : '同意'}
+            </button>
+            <button
+              onClick={() => handleApprove('REJECTED')}
+              disabled={loading}
+              className="flex-1 py-2.5 bg-destructive text-white rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              {loading ? '...' : '拒绝'}
+            </button>
+          </div>
+        </div>
       )}
 
       {canExecute && (
-        <>
-          <h3 className="font-semibold text-foreground mb-4">执行操作</h3>
-          <div className="space-y-4">
-            <div className="p-3 bg-muted rounded-lg text-sm">
-              <p className="text-muted-foreground">
-                异常类型：<span className="text-foreground font-medium">{exceptionType}</span>
-                &nbsp;·&nbsp; 赔付方向：
-                <span className="text-foreground font-medium">
-                  {source === 'SCAN_TRIGGERED' || exceptionType.startsWith('QC_') ? '向供应商追偿' : '赔付客户'}
-                </span>
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">执行备注 *</label>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="请填写执行备注..."
-                rows={2}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-              />
-            </div>
-            <button
-              onClick={handleExecute}
-              disabled={loading}
-              className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50"
-            >
-              {loading ? '执行中...' : '确认执行'}
-            </button>
+        <div className="space-y-4">
+          <h3 className="font-semibold text-foreground">执行操作</h3>
+          <div className="p-3 bg-muted rounded-lg text-sm">
+            <p className="text-muted-foreground">
+              异常类型：<span className="text-foreground font-medium">{exceptionType}</span>
+              &nbsp;·&nbsp; 赔付方向：
+              <span className="text-foreground font-medium">
+                {source === 'SCAN_TRIGGERED' || exceptionType.startsWith('QC_') ? '向供应商追偿' : '赔付客户'}
+              </span>
+            </p>
           </div>
-        </>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="执行备注"
+            rows={2}
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+          />
+          <button
+            onClick={handleExecute}
+            disabled={loading}
+            className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 disabled:opacity-50 transition-all"
+          >
+            {loading ? '执行中...' : '确认执行'}
+          </button>
+        </div>
       )}
     </div>
   )

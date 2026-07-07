@@ -140,11 +140,11 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        // 审批记录：只创建到当前状态之前的历史记录
-        // LEVEL1_APPROVING: 只有 LEVEL1 审批记录（一级审批中，等待一级审批）
-        // LEVEL2_APPROVING: 有 LEVEL1 审批记录（一级已通过，等待二级审批）
-        // EXECUTING: 有 LEVEL1 + LEVEL2 审批记录（两级都已通过，进入执行）
-        if (['LEVEL1_APPROVING', 'LEVEL2_APPROVING', 'EXECUTING', 'COMPLETED'].includes(targetStatus)) {
+        // 审批记录：只创建已完成的审批历史
+        // LEVEL1_APPROVING: 无审批记录（等待一级审批）
+        // LEVEL2_APPROVING: LEVEL1 审批记录（一级已通过，等待二级审批）
+        // EXECUTING/COMPLETED: LEVEL1 + LEVEL2 审批记录（两级都已通过）
+        if (['LEVEL2_APPROVING', 'EXECUTING', 'COMPLETED'].includes(targetStatus)) {
           await db.approvalRecord.create({
             data: {
               ticketId: ticket.id,

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface UserInfo {
   id: string
@@ -19,18 +19,21 @@ const roleLabels: Record<string, string> = {
 
 export default function UserMenu() {
   const router = useRouter()
+  const pathname = usePathname()
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
         if (data.user) setUser(data.user)
+        else setUser(null)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [])
+  }, [pathname])
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })

@@ -35,6 +35,11 @@ export default function Sidebar() {
         </div>
       </div>
 
+      {/* User */}
+      <div className="px-3 py-3 border-b border-sidebar-border">
+        <UserMenu />
+      </div>
+
       {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {

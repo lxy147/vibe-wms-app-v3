@@ -47,7 +47,7 @@ export default function UserMenu() {
     return (
       <button
         onClick={() => router.push('/login')}
-        className="w-full px-3 py-2 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-all text-left"
+        className="w-full px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground bg-primary/15 hover:bg-primary/25 transition-all"
       >
         登录
       </button>
@@ -55,16 +55,21 @@ export default function UserMenu() {
   }
 
   return (
-    <div className="space-y-1">
-      <div className="px-3 py-1.5">
-        <p className="text-sm font-medium text-sidebar-foreground">{user.name}</p>
-        <p className="text-xs text-sidebar-foreground/50">{roleLabels[user.role] || user.role}</p>
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
+          <span className="text-primary text-xs font-bold">{user.name[0]}</span>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-sidebar-foreground">{user.name}</p>
+          <p className="text-xs text-sidebar-foreground/50">{roleLabels[user.role] || user.role}</p>
+        </div>
       </div>
       <button
         onClick={handleLogout}
-        className="w-full px-3 py-1.5 text-xs text-sidebar-foreground/40 hover:text-sidebar-foreground/70 rounded-lg transition-all text-left"
+        className="text-xs text-sidebar-foreground/40 hover:text-sidebar-foreground/70 transition-colors"
       >
-        退出登录
+        退出
       </button>
     </div>
   )

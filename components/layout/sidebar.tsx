@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import UserMenu from './user-menu'
+import UserMenu from './user-menu'
 
 const navItems = [
   { href: '/', label: '工作台', icon: 'LayoutDashboard' },
@@ -64,7 +65,8 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border space-y-3">
+        <UserMenu />
         <p className="text-xs text-sidebar-foreground/40 text-center">v3.0 - 运单全流程管理</p>
       </div>
     </aside>

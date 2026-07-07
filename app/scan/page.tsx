@@ -44,7 +44,6 @@ export default function ScanPage() {
         body: JSON.stringify({
           waybillExternalCode: form.waybillExternalCode,
           skuCode: form.skuCode,
-          operatorId: 'operator_a', // 模拟当前用户
           actualQuantity: form.actualQuantity ? parseFloat(form.actualQuantity) : undefined,
           damageLevel: form.damageLevel ? parseInt(form.damageLevel) : undefined,
         }),

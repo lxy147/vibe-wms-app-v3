@@ -51,7 +51,7 @@ export default function CreateTicketPage() {
           description: form.description,
           severity: form.severity,
           amount: form.amount ? parseFloat(form.amount) : undefined,
-          reportedById: 'operator_a', // 模拟当前用户
+        }),
         }),
       })
 

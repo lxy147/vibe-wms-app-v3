@@ -18,15 +18,57 @@ export async function GET(request: NextRequest) {
     const timeouts = await db.timeoutConfig.findMany({ where: { isActive: true } })
 
     for (const timeout of timeouts) {
+      const cutoffTime = new Date(now.getTime() - timeout.timeoutMinutes * 60000)
+
+      // QC_HOLD：检查扫描批次锁定超时
+      if (timeout.configKey === 'QC_HOLD') {
+        const expiredScans = await db.scanRecord.findMany({
+          where: {
+            batchStatus: 'LOCKED',
+            updatedAt: { lt: cutoffTime },
+            ticketId: { not: null },
+          },
+          select: { ticketId: true },
+        })
+
+        const uniqueTicketIds = [...new Set(expiredScans.map((s) => s.ticketId).filter(Boolean))] as string[]
+
+        for (const ticketId of uniqueTicketIds) {
+          const ticket = await db.exceptionTicket.findUnique({
+            where: { id: ticketId },
+            select: { currentStatus: true },
+          })
+
+          if (ticket && ticket.currentStatus !== 'COMPLETED' && ticket.currentStatus !== 'CLOSED') {
+            await db.$transaction(async (tx) => {
+              await tx.exceptionTicket.update({
+                where: { id: ticketId },
+                data: { currentStatus: 'LEVEL2_APPROVING', version: { increment: 1 } },
+              })
+              await tx.approvalRecord.create({
+                data: {
+                  ticketId,
+                  approverId: 'SYSTEM',
+                  level: 'LEVEL2',
+                  result: 'APPROVED',
+                  comment: `品控暂扣超时 ${timeout.timeoutMinutes} 分钟，自动升级至二级审批`,
+                },
+              })
+            })
+            processed.push(`${ticketId}: QC_HOLD -> LEVEL2_APPROVING`)
+          }
+        }
+        continue
+      }
+
+      // 审批超时：检查工单状态
       const statusMap: Record<string, string[]> = {
         'PENDING_APPROVAL': ['PENDING_APPROVAL'],
         'LEVEL1_APPROVAL': ['LEVEL1_APPROVING'],
         'LEVEL2_APPROVAL': ['LEVEL2_APPROVING'],
-        'QC_HOLD': ['PENDING_APPROVAL', 'LEVEL1_APPROVING', 'LEVEL2_APPROVING'],
       }
 
       const targetStatuses = statusMap[timeout.configKey] || [timeout.configKey]
-      const cutoffTime = new Date(now.getTime() - timeout.timeoutMinutes * 60000)
 
       const expiredTickets = await db.exceptionTicket.findMany({
         where: {

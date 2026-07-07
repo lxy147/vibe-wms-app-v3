@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { validateWaybill } from '@/lib/v2-client'
 import { validateTransition } from '@/lib/state-machine'
+import { getCurrentUser } from '@/lib/auth'
 
 // GET /api/tickets — 工单列表
 export async function GET(request: NextRequest) {
@@ -65,10 +66,16 @@ export async function GET(request: NextRequest) {
 // POST /api/tickets — 创建工单（手工上报）
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { waybillExternalCode, exceptionType, description, severity, amount, reportedById } = body
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    }
 
-    if (!waybillExternalCode || !exceptionType || !reportedById) {
+    const body = await request.json()
+    const { waybillExternalCode, exceptionType, description, severity, amount } = body
+    const reportedById = user.id
+
+    if (!waybillExternalCode || !exceptionType) {
       return NextResponse.json({ error: '缺少必填字段' }, { status: 400 })
     }
 

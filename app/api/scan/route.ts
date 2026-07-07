@@ -2,15 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { evaluateQCRules } from '@/lib/qc-engine'
 import { validateSku, validateWaybill, getWaybillDetail } from '@/lib/v2-client'
+import { getCurrentUser } from '@/lib/auth'
 
 // POST /api/scan — 执行扫描操作
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { waybillExternalCode, skuCode, operatorId, actualQuantity, damageLevel } = body
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    }
 
-    if (!waybillExternalCode || !skuCode || !operatorId) {
-      return NextResponse.json({ error: '缺少必填字段：运单号、SKU编码、操作人' }, { status: 400 })
+    const body = await request.json()
+    const { waybillExternalCode, skuCode, actualQuantity, damageLevel } = body
+    const operatorId = user.id
+
+    if (!waybillExternalCode || !skuCode) {
+      return NextResponse.json({ error: '缺少必填字段：运单号、SKU编码' }, { status: 400 })
     }
 
     // 1. 校验运单存在性（实时调用 V2）

@@ -17,7 +17,7 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { actionType, compensationAmount, remark } = body
+    const { actionType, compensationAmount, remark, version } = body
 
     const ticket = await db.exceptionTicket.findUnique({
       where: { id },
@@ -30,6 +30,14 @@ export async function POST(
 
     if (ticket.currentStatus !== 'EXECUTING') {
       return NextResponse.json({ error: '工单当前不在执行状态' }, { status: 400 })
+    }
+
+    // 乐观锁：防止并发执行
+    if (version !== undefined && ticket.version !== version) {
+      return NextResponse.json({
+        error: '该工单已被他人处理，请刷新页面',
+        code: 'CONCURRENT_CONFLICT',
+      }, { status: 409 })
     }
 
     if (!validateTransition(ticket.currentStatus, 'COMPLETED')) {

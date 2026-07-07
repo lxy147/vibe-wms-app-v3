@@ -9,7 +9,7 @@ export default async function TicketsListPage({
 }) {
   const params = await searchParams
   const page = Math.max(1, parseInt(params.page || '1'))
-  const pageSize = 20
+  const pageSize = 10
   const status = params.status
   const exceptionType = params.exceptionType
   const source = params.source

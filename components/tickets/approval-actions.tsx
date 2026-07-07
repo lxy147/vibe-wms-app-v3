@@ -27,7 +27,7 @@ export default function ApprovalActions({
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [comment, setComment] = useState('')
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null)
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string } | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me')

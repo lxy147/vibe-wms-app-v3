@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Toaster } from 'sonner'
 import Sidebar from '@/components/layout/sidebar'
-import Header from '@/components/layout/header'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -17,8 +16,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <Header />
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex h-screen overflow-hidden">
           <Sidebar />
           <main className="flex-1 overflow-auto">
             {children}

@@ -3,22 +3,50 @@ import { db } from '@/lib/db'
 import { COMPENSATION_DIRECTION_LABELS } from '@/lib/state-machine'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 
-export default async function CompensationsPage() {
-  const records = await db.compensationRecord.findMany({
-    take: 50,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      ticket: { select: { id: true, exceptionType: true } },
-      approvalRecord: { select: { approver: { select: { name: true } } } },
-    },
-  })
+export default async function CompensationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>
+}) {
+  const params = await searchParams
+  const page = Math.max(1, parseInt(params.page || '1'))
+  const pageSize = 10
+  const direction = params.direction
+
+  const where: Record<string, unknown> = {}
+  if (direction) where.direction = direction
+
+  const [records, total] = await Promise.all([
+    db.compensationRecord.findMany({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        ticket: { select: { id: true, exceptionType: true } },
+        approvalRecord: { select: { approver: { select: { name: true } } } },
+      },
+    }),
+    db.compensationRecord.count({ where }),
+  ])
+
+  const totalPages = Math.ceil(total / pageSize)
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-foreground">赔付记录</h2>
-        <p className="text-sm text-muted-foreground mt-1">共 {records.length} 条赔付记录</p>
+        <p className="text-sm text-muted-foreground mt-1">共 {total} 条赔付记录</p>
       </div>
+
+      <form className="bg-card border border-border rounded-xl p-4 flex gap-3">
+        <select name="direction" defaultValue={direction || ''} className="px-3 py-2 border border-border rounded-lg bg-background text-sm">
+          <option value="">全部方向</option>
+          <option value="TO_CUSTOMER">赔付客户</option>
+          <option value="FROM_SUPPLIER">向供应商追偿</option>
+        </select>
+        <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm">筛选</button>
+      </form>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full">
@@ -61,6 +89,19 @@ export default async function CompensationsPage() {
             ))}
           </tbody>
         </table>
+        {totalPages > 1 && (
+          <div className="px-5 py-3 border-t border-border flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">第 {page} / {totalPages} 页</span>
+            <div className="flex gap-2">
+              {page > 1 && (
+                <a href={`/compensations?page=${page - 1}${direction ? `&direction=${direction}` : ''}`} className="px-3 py-1 border border-border rounded text-sm hover:bg-muted">上一页</a>
+              )}
+              {page < totalPages && (
+                <a href={`/compensations?page=${page + 1}${direction ? `&direction=${direction}` : ''}`} className="px-3 py-1 border border-border rounded text-sm hover:bg-muted">下一页</a>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

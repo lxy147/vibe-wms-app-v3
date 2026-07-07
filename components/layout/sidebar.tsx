@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import UserMenu from './user-menu'
-import UserMenu from './user-menu'
 
 const navItems = [
   { href: '/', label: '工作台', icon: 'LayoutDashboard' },

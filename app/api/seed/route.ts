@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       data: [
         { name: '小额工单', minAmount: 0, maxAmount: 500, requiredLevels: ['LEVEL1'] },
         { name: '中额工单', minAmount: 500, maxAmount: 3000, requiredLevels: ['LEVEL1', 'LEVEL2'] },
-        { name: '大额工单', minAmount: 3000, maxAmount: null, requiredLevels: ['LEVEL2'] },
+        { name: '大额工单', minAmount: 3000, maxAmount: null, requiredLevels: ['LEVEL1', 'LEVEL2'] },
       ],
     })
 

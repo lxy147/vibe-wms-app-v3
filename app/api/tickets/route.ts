@@ -141,14 +141,11 @@ export async function POST(request: NextRequest) {
     })
 
     const requiredLevels = (thresholdConfig?.requiredLevels as string[]) || ['LEVEL1']
-    const initialStatus = requiredLevels.includes('LEVEL2') && !requiredLevels.includes('LEVEL1')
-      ? 'LEVEL2_APPROVING'
-      : 'LEVEL1_APPROVING'
+    const initialStatus = 'LEVEL1_APPROVING'
 
-    // 5. 分配审批人
-    const approverRole = initialStatus === 'LEVEL2_APPROVING' ? 'LEVEL2_APPROVER' : 'LEVEL1_APPROVER'
+    // 5. 分配审批人（始终从一级审批开始）
     const approver = await db.user.findFirst({
-      where: { role: approverRole, isActive: true, id: { not: reportedById } },
+      where: { role: 'LEVEL1_APPROVER', isActive: true, id: { not: reportedById } },
     })
 
     // 6. 创建工单

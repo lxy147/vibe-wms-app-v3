@@ -58,7 +58,7 @@ export default async function CompensationsPage({
               <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase">关联工单</th>
               <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase">审批人</th>
               <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase">备注</th>
-              <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase">时间</th>
+              <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase">执行时间</th>
             </tr>
           </thead>
           <tbody>

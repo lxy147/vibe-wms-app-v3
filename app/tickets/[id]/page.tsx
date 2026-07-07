@@ -87,14 +87,13 @@ export default async function TicketDetailPage({
           <ApprovalActions
             ticketId={ticket.id}
             currentStatus={ticket.currentStatus}
-              version={ticket.version}
-              reportedById={ticket.reportedById}
-              exceptionType={ticket.exceptionType}
-              source={ticket.source}
-              amount={ticket.amount}
-              approverId={ticket.currentApprover?.id || ''}
-            />
-          </div>
+            version={ticket.version}
+            reportedById={ticket.reportedById}
+            exceptionType={ticket.exceptionType}
+            source={ticket.source}
+            amount={ticket.amount}
+            approverId={ticket.currentApprover?.id || ''}
+          />
         </div>
       )}
 

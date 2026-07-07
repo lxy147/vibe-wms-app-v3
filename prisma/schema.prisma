@@ -264,6 +264,7 @@ model ScanRecord {
   resultDetail      String?         @db.Text
   batchStatus       BatchStatus     @default(AVAILABLE)
   createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@index([waybillSnapshotId, skuCode])
   @@index([ticketId])

@@ -52,7 +52,6 @@ export default function CreateTicketPage() {
           severity: form.severity,
           amount: form.amount ? parseFloat(form.amount) : undefined,
         }),
-        }),
       })
 
       const data = await res.json()

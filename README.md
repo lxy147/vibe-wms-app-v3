@@ -4,8 +4,9 @@
 
 ## 在线地址
 
-V3: [待部署]
+V3: https://vibe-wms-app-v3.vercel.app
 V2: https://vibe-wms-platform.vercel.app/
+GitHub: https://github.com/lxy147/vibe-wms-app-v3
 
 ## 技术栈
 
@@ -32,8 +33,10 @@ app/
 ├── compensations/page.tsx        # 赔付记录
 ├── sync/page.tsx                 # 接口监控
 ├── settings/page.tsx             # 系统配置
+├── login/page.tsx                # 登录页
 ├── users/page.tsx                # 用户管理
 └── api/                          # API 路由
+    ├── auth/                     # 认证 API (login/logout/me)
     ├── scan/                     # 扫描 API
     ├── tickets/                  # 工单 API
     ├── qc-rules/                 # 品控规则 API
@@ -88,13 +91,20 @@ npm run dev
 
 ## 测试账号
 
-| 用户名 | 密码 | 角色 |
-|--------|------|------|
-| admin | 123456 | 管理员 |
-| qc_supervisor | 123456 | 品控主管 |
-| approver1_a | 123456 | 一级审批人 |
-| approver2_a | 123456 | 二级审批人 |
-| operator_a | 123456 | 操作员 |
+| 用户名 | 密码 | 角色 | 说明 |
+|--------|------|------|------|
+| admin | 123456 | 管理员 | 全部权限 |
+| qc_supervisor | 123456 | 品控主管 | 扫描 + 快速放行 |
+| approver1_a | 123456 | 一级审批人 | 一级审批 |
+| approver1_b | 123456 | 一级审批人 | 一级审批 |
+| approver1_c | 123456 | 一级审批人 | 一级审批 |
+| approver2_a | 123456 | 二级审批人 | 二级审批 |
+| approver2_b | 123456 | 二级审批人 | 二级审批 |
+| operator_a | 123456 | 操作员 | 扫描 + 上报 |
+| operator_b | 123456 | 操作员 | 扫描 + 上报 |
+| operator_c | 123456 | 操作员 | 扫描 + 上报 |
+
+**审批规则**：同级别审批人都可审批，不能审批自己提交的工单。
 
 ## 核心功能
 
